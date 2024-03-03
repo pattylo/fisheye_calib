@@ -26,6 +26,10 @@
 #include "essential.h"
 #include <opencv2/calib3d.hpp>
 
+static double last_request;
+static std::string image_save_folder;
+static int image_i = 0;
+
 void fisheye_callback(const sensor_msgs::Image::ConstPtr& image)
 {
     // main process here:
@@ -41,54 +45,36 @@ void fisheye_callback(const sensor_msgs::Image::ConstPtr& image)
 
     cv::Mat fisheye_frame = fisheye_ptr->image;
 
-    cv::imshow("fisheye", fisheye_frame);
-    cv::waitKey(10);
+    // cv::imshow("fisheye", fisheye_frame);
+    // cv::waitKey(10);
 
-    cv::Mat undistorted_frame;
-    
-    // K
-    cv::Mat K_matrix = (cv::Mat_<float>(3, 3) << 
-            284.18060302734375, 0.0, 425.24481201171875, 
-            0.0, 285.1946105957031, 398.6476135253906, 
-            0.0, 0.0, 1.0
-        );
+    if(ros::Time::now().toSec() - last_request > ros::Duration(2.50).toSec())
+    {
+        std::string filename = image_save_folder + "fisheye_" + std::to_string(image_i) + ".png";
+        std::remove(filename.c_str());
 
-    // D
-    std::vector<float> D_vec = {-0.0003750045143533498, 0.029878979548811913, -0.029044020920991898, 0.003844168037176132};
-    cv::Mat D_matrix(D_vec, true);
+        cv::imwrite(filename, fisheye_frame);
+        image_i ++;
+        last_request = ros::Time::now().toSec();
+    }
 
-    cv::Mat R_matrix = cv::Mat::eye(3, 3, CV_64F);
 
-    cv::Mat KNew_matrix;
-
-    // cv::fisheye::estimateNewCameraMatrixForUndistortRectify(
-    //     K_matrix,
-    //     D_matrix,
-    //     fisheye_frame.size(),
-    //     R_matrix,
-    //     KNew_matrix,
-    //     0.0,
-    //     fisheye_frame.size(),
-    //     1.0
-    // );
-
-    // std::cout<<KNew_matrix<<std::endl;
-
-    cv::fisheye::undistortImage(
-        fisheye_frame, 
-        undistorted_frame, 
-        K_matrix, 
-        D_matrix,
-        K_matrix,
-        fisheye_frame.size()
-    );
-    
-    cv::imshow("un_fisheye", undistorted_frame);
-    cv::waitKey(10);
 }
 
 
 int main(int argc, char** argv)
 {
+    ros::init(argc, argv, "planner_node");
+    ros::NodeHandle nh("~");
+
+    nh.getParam("log_path", image_save_folder);
+
+    last_request = ros::Time::now().toSec();
+
+    ros::Subscriber fisheye_sub = nh.subscribe<sensor_msgs::Image>
+        ("/camera/fisheye1/image_raw", 1, &fisheye_callback);
+
+    ros::spin();
+
     return 0;
 }

@@ -1,0 +1,5 @@
+<launch>
+    <node name="collect" pkg="fisheye_calibrate" type="collect" output="screen">
+        <param name="log_path" type="string" value="$(find fisheye_calibrate)/images/"/>
+    </node>         
+</launch>
