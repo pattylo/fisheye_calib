@@ -30,11 +30,19 @@
 #include <stdio.h>
 #include <iostream>
 
+#include "essential.h"
+
 // Defining the dimensions of checkerboard
 int CHECKERBOARD[2]{6,9}; 
+static std::string image_folder;
 
 int main(int argc, char** argv)
 {
+    ros::init(argc, argv, "calibrate");
+    ros::NodeHandle nh("~");
+
+    nh.getParam("image_path", image_folder);
+    
     // Creating vector to store vectors of 3D points for each checkerboard image
     std::vector<std::vector<cv::Point3f> > objpoints;
 
@@ -53,9 +61,10 @@ int main(int argc, char** argv)
     // Extracting path of individual image stored in a given directory
     std::vector<cv::String> images;
     // Path of the folder containing checkerboard images
-    std::string path = "./images/*.jpg";
 
-    cv::glob(path, images);
+    std::cout<<image_folder<<std::endl;
+
+    cv::glob(image_folder, images);
 
     cv::Mat frame, gray;
     // vector to store the pixel coordinates of detected checker board corners 
@@ -79,20 +88,20 @@ int main(int argc, char** argv)
         */
         if(success)
         {
-        cv::TermCriteria criteria(cv::TermCriteria::EPS | cv::TermCriteria::MAX_ITER, 30, 0.001);
+            cv::TermCriteria criteria(cv::TermCriteria::EPS | cv::TermCriteria::MAX_ITER, 30, 0.001);
 
-        // refining pixel coordinates for given 2d points.
-        cv::cornerSubPix(gray,corner_pts,cv::Size(11,11), cv::Size(-1,-1),criteria);
+            // refining pixel coordinates for given 2d points.
+            cv::cornerSubPix(gray,corner_pts,cv::Size(11,11), cv::Size(-1,-1),criteria);
 
-        // Displaying the detected corner points on the checker board
-        cv::drawChessboardCorners(frame, cv::Size(CHECKERBOARD[0],CHECKERBOARD[1]), corner_pts,success);
+            // Displaying the detected corner points on the checker board
+            cv::drawChessboardCorners(frame, cv::Size(CHECKERBOARD[0],CHECKERBOARD[1]), corner_pts,success);
 
-        objpoints.push_back(objp);
-        imgpoints.push_back(corner_pts);
+            objpoints.push_back(objp);
+            imgpoints.push_back(corner_pts);
         }
 
-        cv::imshow("Image",frame);
-        cv::waitKey(0);
+        // cv::imshow("Image",frame);
+        // cv::waitKey(0);
     }
 
     cv::destroyAllWindows();
@@ -107,10 +116,12 @@ int main(int argc, char** argv)
     */
     cv::calibrateCamera(objpoints, imgpoints,cv::Size(gray.rows,gray.cols),cameraMatrix,distCoeffs,R,T);
 
-    std::cout << "cameraMatrix : " << cameraMatrix << std::endl;
-    std::cout << "distCoeffs : " << distCoeffs << std::endl;
-    std::cout << "Rotation vector : " << R << std::endl;
-    std::cout << "Translation vector : " << T << std::endl;
+    std::cout << "cameraMatrix :\n" << cameraMatrix << std::endl;
+    std::cout << "distCoeffs : \n" << distCoeffs << std::endl;
+    // std::cout << "Rotation vector : " << R << std::endl;
+    // std::cout << "Translation vector : " << T << std::endl;
+
+    ros::spin();
 
     return 0;
 }

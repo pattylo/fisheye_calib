@@ -64,7 +64,7 @@ void fisheye_callback(const sensor_msgs::Image::ConstPtr& image)
 
 int main(int argc, char** argv)
 {
-    ros::init(argc, argv, "planner_node");
+    ros::init(argc, argv, "collect");
     ros::NodeHandle nh("~");
 
     nh.getParam("log_path", image_save_folder);

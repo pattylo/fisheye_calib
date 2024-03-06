@@ -1,0 +1,5 @@
+<launch>
+    <node name="calibrate" pkg="fisheye_calibrate" type="calibrate" output="screen">
+        <param name="image_path" type="string" value="$(find fisheye_calibrate)/images/big/"/>
+    </node>         
+</launch>
